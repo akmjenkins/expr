@@ -63,6 +63,19 @@ function runSetterGetterTests({ setter, getter }, skipCreate) {
     a.ok(Array.isArray(obj.bar.qux));
     a.ok(obj.bar.qux.length === 3);
     a.strictEqual(obj.bar.qux[2],'baz');
+
+    // immutable 
+    let immut = {
+      a: {
+        b: [{c: ['a','b']}]
+      },
+      d: {}
+    }
+
+    let next = setter('a.b[0].c[2]',{create:true,immutable:true})(immut,'jim');
+    a.notStrictEqual(next,immut);
+    a.equal(next.a.b[0].c[2],'jim');
+    a.strictEqual(immut.d,next.d);
   }
 
 }

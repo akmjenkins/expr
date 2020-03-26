@@ -33,6 +33,10 @@ var pathCache = new Cache(MAX_CACHE_SIZE),
   getCache = new Cache(MAX_CACHE_SIZE)
 
 var config
+var clone = function(o) {
+  if(!o) return o;
+  return Array.isArray(o) ? o.slice() : Object.assign({},o);
+}
 
 module.exports = {
   Cache: Cache,
@@ -43,20 +47,26 @@ module.exports = {
 
   setter: function(path, options) {
     var parts = normalizePath(path)
-    let { create = false, array = true } = options || {};
-    let cacheKey = path+''+create+''+array;
+    let { create = false, array = true, immutable = false } = options || {};
+    let cacheKey = path+''+create+''+array+''+immutable;
+    var _clone = function(o) { return immutable ? clone(o) : o; }
     return (
       setCache.get(cacheKey) ||
       setCache.set(cacheKey, function setter(data, value) {
+        var start = _clone(data);
         var index = 0,
-          len = parts.length;
+          len = parts.length,
+          d = start;
         while (index < len - 1) {
-          var next = data[parts[index]];
-          if(!next && create) data[parts[index]] = parts[index+1].match(DIGIT_REGEX) && array ? [] : {};
-          data = data[parts[index++]];
+          var next = d[parts[index]];
+          if(!next && create) d[parts[index]] = parts[index+1].match(DIGIT_REGEX) && array ? [] : {};
+          d[parts[index]] = _clone(d[parts[index]]);
+          d = d[parts[index++]];
         }
 
-        data[parts[index]] = value
+        d[parts[index]] = value
+
+        return start;
       })
     )
   },
